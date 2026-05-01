@@ -221,24 +221,27 @@
       box-shadow: 0 2px 10px rgba(120, 50, 210, 0.45);
     }
 
-    /* size buttons */
-    .s-btn {
-      border: 2px solid #ddd;
-      border-radius: 20px;
-      padding: 4px 12px;
+    /* size dot buttons */
+    .sz-btn {
+      border: 2px solid transparent;
+      border-radius: 10px;
+      background: #f8f4ff;
       cursor: pointer;
-      background: #fff;
-      font-size: clamp(0.68rem, 3vw, 0.78rem);
-      color: #777;
-      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
       flex-shrink: 0;
     }
 
-    .s-btn.on {
-      background: linear-gradient(135deg, var(--pink), var(--purple));
-      color: #fff;
-      border-color: transparent;
-      box-shadow: 0 2px 8px rgba(200, 100, 200, 0.35);
+    .sz-btn.on {
+      border-color: var(--dpurple);
+      background: var(--lpurple);
+    }
+
+    .sz-btn:active {
+      transform: scale(0.91);
     }
 
     /* action buttons */
@@ -432,10 +435,16 @@
   <div id="toolbar">
     <div class="t-row" id="color-row"></div>
     <div class="t-row">
-      <button class="s-btn on"  data-sz="3">ほそい</button>
-      <button class="s-btn"     data-sz="8">ふつう</button>
-      <button class="s-btn"     data-sz="18">ふとい</button>
-      <button class="a-btn btn-eraser" id="eraser-btn">🧹 けしごむ</button>
+      <button class="sz-btn on" data-sz="3" aria-label="ほそい">
+        <svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="4" fill="#555"/></svg>
+      </button>
+      <button class="sz-btn" data-sz="8" aria-label="ふつう">
+        <svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="7" fill="#555"/></svg>
+      </button>
+      <button class="sz-btn" data-sz="18" aria-label="ふとい">
+        <svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="11" fill="#555"/></svg>
+      </button>
+      <button class="a-btn btn-eraser" id="eraser-btn"><svg width="26" height="22" viewBox="0 0 26 22" style="vertical-align:middle;margin-right:3px"><g transform="translate(13,11) rotate(-20)"><rect x="-10" y="-6" width="10" height="12" fill="#F4A7B9" rx="1"/><rect x="0" y="-6" width="10" height="12" fill="#fff" rx="1"/><rect x="-10" y="-6" width="20" height="12" fill="none" stroke="#888" stroke-width="1.5" rx="1"/></g></svg>けしごむ</button>
       <button class="a-btn btn-undo"  id="undo-btn">↩ もどす</button>
       <button class="a-btn btn-clear" id="clear-btn">🗑 けす</button>
     </div>
@@ -565,9 +574,9 @@ function buildPalette() {
 // ─────────────────────────────────────────────
 //  SIZE BUTTONS
 // ─────────────────────────────────────────────
-document.querySelectorAll('.s-btn').forEach(btn => {
+document.querySelectorAll('.sz-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.s-btn').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.sz-btn').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     st.size = parseInt(btn.dataset.sz);
   });
