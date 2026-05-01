@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ff85a2">
+  <title>じぶんのえをうごかそう！</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --pink:       #ff85a2;
+      --pink2:      #ff5588;
+      --purple:     #c98ff7;
+      --dpurple:    #8b44d4;
+      --lpink:      #ffe4ef;
+      --lpurple:    #f0d6ff;
+      --yellow:     #ffe066;
+      --bg:         #fff8fc;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'Hiragino Maru Gothic ProN', 'Hiragino Kaku Gothic ProN', 'BIZ UDGothic', 'Meiryo', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ======== APP SHELL ======== */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      background: var(--bg);
+    }
+
+    /* ======== HEADER ======== */
+    #header {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      padding: 10px 14px 7px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(180, 80, 160, 0.3);
+      position: relative;
+      z-index: 2;
+    }
+
+    #header h1 {
+      color: #fff;
+      font-size: clamp(0.95rem, 4vw, 1.15rem);
+      font-weight: bold;
+      letter-spacing: 0.04em;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+
+    #step-label {
+      color: rgba(255,255,255,0.92);
+      font-size: clamp(0.65rem, 3vw, 0.78rem);
+      margin-top: 3px;
+      transition: opacity 0.3s;
+    }
+
+    /* ======== MAIN CANVAS AREA ======== */
+    #main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    #screen-char,
+    #screen-bg {
+      background: #fff;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      touch-action: none;
+    }
+
+    /* hint overlay */
+    .hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #e0c8d8;
+      font-size: clamp(0.85rem, 3.5vw, 1rem);
+      line-height: 2;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ======== ANIMATION SCREEN ======== */
+    #anim-buttons {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      padding: 0 6px;
+      z-index: 5;
+      flex-wrap: wrap;
+    }
+
+    .anim-btn {
+      background: rgba(255,255,255,0.9);
+      border: 2px solid var(--lpurple);
+      border-radius: 22px;
+      padding: 5px 11px;
+      font-size: clamp(0.65rem, 2.8vw, 0.75rem);
+      font-weight: bold;
+      color: var(--dpurple);
+      cursor: pointer;
+      transition: all 0.18s;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+
+    .anim-btn.active {
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 3px 12px rgba(200, 100, 200, 0.45);
+      transform: scale(1.06);
+    }
+
+    .anim-btn:active {
+      transform: scale(0.96);
+    }
+
+    #send-btn {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: none;
+      border-radius: 32px;
+      padding: 12px 28px;
+      font-size: clamp(0.82rem, 3.5vw, 0.95rem);
+      font-weight: bold;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+      cursor: pointer;
+      z-index: 5;
+      box-shadow: 0 5px 18px rgba(200, 80, 200, 0.5);
+      white-space: nowrap;
+      transition: transform 0.15s;
+    }
+
+    #send-btn:active {
+      transform: translateX(-50%) scale(0.96);
+    }
+
+    /* ======== TOOLBAR ======== */
+    #toolbar {
+      flex-shrink: 0;
+      background: #fff;
+      border-top: 2px solid var(--lpink);
+      padding: 7px 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      box-shadow: 0 -2px 8px rgba(200, 100, 160, 0.1);
+    }
+
+    .t-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* color swatch */
+    .c-btn {
+      width: clamp(28px, 8vw, 36px);
+      height: clamp(28px, 8vw, 36px);
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+
+    .c-btn.on {
+      border-color: var(--dpurple);
+      transform: scale(1.28);
+      box-shadow: 0 2px 10px rgba(120, 50, 210, 0.45);
+    }
+
+    /* size buttons */
+    .s-btn {
+      border: 2px solid #ddd;
+      border-radius: 20px;
+      padding: 4px 12px;
+      cursor: pointer;
+      background: #fff;
+      font-size: clamp(0.68rem, 3vw, 0.78rem);
+      color: #777;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .s-btn.on {
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(200, 100, 200, 0.35);
+    }
+
+    /* action buttons */
+    .a-btn {
+      border: none;
+      border-radius: 20px;
+      padding: 6px 13px;
+      cursor: pointer;
+      font-size: clamp(0.68rem, 3vw, 0.78rem);
+      font-weight: bold;
+      transition: transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .a-btn:active {
+      transform: scale(0.93);
+    }
+
+    .btn-undo {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .btn-clear {
+      background: #ffe8ee;
+      color: #d44466;
+    }
+
+    /* eraser button */
+    .btn-eraser {
+      background: #f5f0ff;
+      color: var(--dpurple);
+      border: 2px solid var(--lpurple);
+    }
+
+    .btn-eraser.on {
+      background: var(--lpurple);
+      border-color: var(--dpurple);
+    }
+
+    /* ======== TAB BAR ======== */
+    #tabbar {
+      flex-shrink: 0;
+      display: flex;
+      background: #fff;
+      border-top: 2px solid var(--lpink);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 7px 4px 8px;
+      border: none;
+      background: none;
+      font-size: clamp(0.62rem, 2.8vw, 0.72rem);
+      color: #bbb;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: color 0.2s;
+    }
+
+    .tab-icon {
+      font-size: clamp(1.2rem, 5vw, 1.5rem);
+      transition: transform 0.2s;
+      line-height: 1;
+    }
+
+    .tab-btn.on {
+      color: var(--dpurple);
+      font-weight: bold;
+    }
+
+    .tab-btn.on .tab-icon {
+      transform: scale(1.22);
+    }
+
+    /* ======== TRANSITION OVERLAY ======== */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 80;
+    }
+
+    /* ======== TOAST ======== */
+    #toast {
+      position: fixed;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+      padding: 10px 26px;
+      border-radius: 32px;
+      font-size: clamp(0.9rem, 4vw, 1.05rem);
+      font-weight: bold;
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(200, 80, 200, 0.55);
+      transition: opacity 0.35s ease;
+      white-space: nowrap;
+    }
+
+    /* ======== STEP DOTS ======== */
+    #step-dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 3px 0 1px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      transition: all 0.3s;
+    }
+
+    .dot.on {
+      background: #fff;
+      transform: scale(1.35);
+      box-shadow: 0 0 6px rgba(255,255,255,0.8);
+    }
+
+    .dot.done {
+      background: rgba(255,255,255,0.75);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <h1>✨ じぶんのえをうごかそう！ ✨</h1>
+    <div id="step-dots">
+      <div class="dot on" id="dot0"></div>
+      <div class="dot" id="dot1"></div>
+      <div class="dot" id="dot2"></div>
+    </div>
+    <div id="step-label">ゆびでじゆうにキャラをかいてね ✏️</div>
+  </div>
+
+  <!-- MAIN CANVAS -->
+  <div id="main">
+
+    <!-- Tab 0: キャラ -->
+    <div class="screen active" id="screen-char">
+      <canvas id="charCanvas"></canvas>
+      <div class="hint" id="hint-char">
+        ✏️ ゆびでじゆうにかいてね！<br>
+        どんなキャラでもOK！
+      </div>
+    </div>
+
+    <!-- Tab 1: はいけい -->
+    <div class="screen" id="screen-bg">
+      <canvas id="bgCanvas"></canvas>
+      <canvas id="charOverlay" style="opacity:0.3; pointer-events:none;"></canvas>
+      <div class="hint" id="hint-bg">
+        🌿 はいけいをかいてね！<br>
+        うすいキャラをさんこうにしてね
+      </div>
+    </div>
+
+    <!-- Tab 2: うごかす -->
+    <div class="screen" id="screen-anim">
+      <canvas id="animCanvas"></canvas>
+      <div id="anim-buttons">
+        <button class="anim-btn active" data-anim="bounce">🐰 ぴょんぴょん</button>
+        <button class="anim-btn" data-anim="walk">🐾 あるく</button>
+        <button class="anim-btn" data-anim="dance">💃 おどる</button>
+        <button class="anim-btn" data-anim="sleep">😴 ねむる</button>
+      </div>
+      <button id="send-btn">💌 かぞくにおくる</button>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- TOOLBAR (hidden on anim tab) -->
+  <div id="toolbar">
+    <div class="t-row" id="color-row"></div>
+    <div class="t-row">
+      <button class="s-btn on"  data-sz="3">ほそい</button>
+      <button class="s-btn"     data-sz="8">ふつう</button>
+      <button class="s-btn"     data-sz="18">ふとい</button>
+      <button class="a-btn btn-eraser" id="eraser-btn">🧹 けしごむ</button>
+      <button class="a-btn btn-undo"  id="undo-btn">↩ もどす</button>
+      <button class="a-btn btn-clear" id="clear-btn">🗑 けす</button>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div id="tabbar">
+    <button class="tab-btn on" data-tab="0">
+      <span class="tab-icon">🐱</span>
+      <span>キャラ</span>
+    </button>
+    <button class="tab-btn" data-tab="1">
+      <span class="tab-icon">🌿</span>
+      <span>はいけい</span>
+    </button>
+    <button class="tab-btn" data-tab="2">
+      <span class="tab-icon">▶️</span>
+      <span>うごかす</span>
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- TRANSITION OVERLAY -->
+<div id="overlay"></div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const PALETTE = [
+  { name: 'くろ',     hex: '#222222' },
+  { name: 'ピンク',   hex: '#ff4488' },
+  { name: 'むらさき', hex: '#9933ee' },
+  { name: 'みどり',   hex: '#33bb55' },
+  { name: 'きいろ',   hex: '#ffcc00' },
+  { name: 'あお',     hex: '#2288ff' },
+  { name: 'オレンジ', hex: '#ff7722' },
+];
+
+const STEP_LABELS = [
+  'ゆびでじゆうにキャラをかいてね ✏️',
+  'はいけいをかいてね 🌿',
+  'うごいた！すごい！ 🎉',
+];
+
+const SPARKLE_COLORS = ['#ff85a2','#c98ff7','#ffcc00','#ff5588','#88ddff','#ffaacc'];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+const st = {
+  tab:       0,
+  color:     PALETTE[0].hex,
+  size:      3,
+  eraser:    false,
+  drawing:   false,
+  lx: 0, ly: 0,
+  animType:  'bounce',
+};
+
+const undoStacks = [[], []]; // [char, bg]
+const MAX_UNDO = 18;
+
+// ─────────────────────────────────────────────
+//  CANVAS ELEMENTS
+// ─────────────────────────────────────────────
+const charCanvas   = document.getElementById('charCanvas');
+const bgCanvas     = document.getElementById('bgCanvas');
+const charOverlay  = document.getElementById('charOverlay');
+const animCanvas   = document.getElementById('animCanvas');
+
+const charCtx    = charCanvas.getContext('2d');
+const bgCtx      = bgCanvas.getContext('2d');
+const overlayCtx = charOverlay.getContext('2d');
+const animCtx    = animCanvas.getContext('2d');
+
+function initCanvases() {
+  const m = document.getElementById('main');
+  const w = m.clientWidth;
+  const h = m.clientHeight;
+  [charCanvas, bgCanvas, charOverlay, animCanvas].forEach(c => {
+    c.width  = w;
+    c.height = h;
+    c.style.width  = w + 'px';
+    c.style.height = h + 'px';
+  });
+}
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    // Save drawings
+    const cd = charCtx.getImageData(0, 0, charCanvas.width, charCanvas.height);
+    const bd = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+    initCanvases();
+    charCtx.putImageData(cd, 0, 0);
+    bgCtx.putImageData(bd, 0, 0);
+  }, 150);
+});
+
+// ─────────────────────────────────────────────
+//  COLOR PALETTE
+// ─────────────────────────────────────────────
+function buildPalette() {
+  const row = document.getElementById('color-row');
+  PALETTE.forEach((c, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'c-btn' + (i === 0 ? ' on' : '');
+    btn.style.background = c.hex;
+    btn.title = c.name;
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-label', c.name);
+    btn.addEventListener('click', () => {
+      if (st.eraser) toggleEraser(); // turn off eraser when picking color
+      document.querySelectorAll('.c-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      st.color = c.hex;
+    });
+    row.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  SIZE BUTTONS
+// ─────────────────────────────────────────────
+document.querySelectorAll('.s-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.s-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    st.size = parseInt(btn.dataset.sz);
+  });
+});
+
+// ─────────────────────────────────────────────
+//  ERASER
+// ─────────────────────────────────────────────
+const eraserBtn = document.getElementById('eraser-btn');
+eraserBtn.addEventListener('click', toggleEraser);
+
+function toggleEraser() {
+  st.eraser = !st.eraser;
+  eraserBtn.classList.toggle('on', st.eraser);
+}
+
+// ─────────────────────────────────────────────
+//  DRAWING
+// ─────────────────────────────────────────────
+function activeCtx()    { return st.tab === 0 ? charCtx : bgCtx; }
+function activeCanvas() { return st.tab === 0 ? charCanvas : bgCanvas; }
+
+function getXY(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.changedTouches ? e.changedTouches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
+}
+
+function pointerDown(e) {
+  if (st.tab > 1) return;
+  e.preventDefault();
+  saveUndo();
+  st.drawing = true;
+  const { x, y } = getXY(e, activeCanvas());
+  st.lx = x; st.ly = y;
+
+  const ctx = activeCtx();
+  applyBrush(ctx);
+  ctx.beginPath();
+  ctx.arc(x, y, st.eraser ? st.size * 1.5 : st.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  hideHint();
+}
+
+function pointerMove(e) {
+  if (!st.drawing || st.tab > 1) return;
+  e.preventDefault();
+  const { x, y } = getXY(e, activeCanvas());
+  const ctx = activeCtx();
+  applyBrush(ctx);
+  ctx.beginPath();
+  ctx.moveTo(st.lx, st.ly);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  st.lx = x; st.ly = y;
+}
+
+function pointerUp() { st.drawing = false; }
+
+function applyBrush(ctx) {
+  if (st.eraser) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.fillStyle   = 'rgba(0,0,0,1)';
+    ctx.lineWidth   = st.size * 3;
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = st.color;
+    ctx.fillStyle   = st.color;
+    ctx.lineWidth   = st.size;
+  }
+  ctx.lineCap  = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function resetComposite(ctx) {
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// Attach to both canvases (only visible one gets events)
+[charCanvas, bgCanvas].forEach(cv => {
+  cv.addEventListener('touchstart',  pointerDown, { passive: false });
+  cv.addEventListener('touchmove',   pointerMove, { passive: false });
+  cv.addEventListener('touchend',    pointerUp);
+  cv.addEventListener('touchcancel', pointerUp);
+  cv.addEventListener('mousedown',   pointerDown);
+  cv.addEventListener('mousemove',   pointerMove);
+  cv.addEventListener('mouseup',     pointerUp);
+  cv.addEventListener('mouseleave',  pointerUp);
+});
+
+// ─────────────────────────────────────────────
+//  HINT VISIBILITY
+// ─────────────────────────────────────────────
+function hideHint() {
+  const id = st.tab === 0 ? 'hint-char' : 'hint-bg';
+  document.getElementById(id).style.opacity = '0';
+}
+
+// ─────────────────────────────────────────────
+//  UNDO / CLEAR
+// ─────────────────────────────────────────────
+function saveUndo() {
+  if (st.tab > 1) return;
+  const cv = activeCanvas();
+  const ctx = activeCtx();
+  resetComposite(ctx);
+  const snap = ctx.getImageData(0, 0, cv.width, cv.height);
+  undoStacks[st.tab].push(snap);
+  if (undoStacks[st.tab].length > MAX_UNDO) undoStacks[st.tab].shift();
+}
+
+document.getElementById('undo-btn').addEventListener('click', () => {
+  if (st.tab > 1 || !undoStacks[st.tab].length) return;
+  const snap = undoStacks[st.tab].pop();
+  const ctx = activeCtx();
+  resetComposite(ctx);
+  ctx.putImageData(snap, 0, 0);
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  if (st.tab > 1) return;
+  saveUndo();
+  const cv = activeCanvas();
+  const ctx = activeCtx();
+  resetComposite(ctx);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const id = st.tab === 0 ? 'hint-char' : 'hint-bg';
+  document.getElementById(id).style.opacity = '1';
+});
+
+// ─────────────────────────────────────────────
+//  TAB SWITCHING
+// ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(parseInt(btn.dataset.tab)));
+});
+
+function switchTab(tab) {
+  if (tab === st.tab) return;
+
+  showTransition(tab);
+  st.tab = tab;
+
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('on', parseInt(b.dataset.tab) === tab));
+
+  document.querySelectorAll('.screen').forEach((s, i) =>
+    s.classList.toggle('active', i === tab));
+
+  document.getElementById('step-label').textContent = STEP_LABELS[tab];
+
+  // Step dots
+  for (let i = 0; i < 3; i++) {
+    const d = document.getElementById('dot' + i);
+    d.className = 'dot' + (i === tab ? ' on' : i < tab ? ' done' : '');
+  }
+
+  // Toolbar
+  document.getElementById('toolbar').style.display = tab === 2 ? 'none' : 'flex';
+
+  // Tab-specific
+  if (tab === 1) syncCharOverlay();
+  if (tab === 2) { startAnim(); showToast('うごいた！すごい！ 🎉'); }
+  else stopAnim();
+}
+
+function syncCharOverlay() {
+  resetComposite(charCtx);
+  overlayCtx.clearRect(0, 0, charOverlay.width, charOverlay.height);
+  overlayCtx.drawImage(charCanvas, 0, 0);
+}
+
+// ─────────────────────────────────────────────
+//  TRANSITION OVERLAY
+// ─────────────────────────────────────────────
+const TRANS_EMOJI = ['🐱✨', '🌿🎨', '🎉🌟✨'];
+
+function showTransition(tab) {
+  const ov = document.getElementById('overlay');
+  ov.textContent = TRANS_EMOJI[tab];
+  ov.style.background = tab === 2
+    ? 'radial-gradient(circle, rgba(255,200,240,0.8), rgba(170,90,255,0.7))'
+    : 'rgba(255, 242, 250, 0.82)';
+  ov.style.transition = 'none';
+  ov.style.opacity = '1';
+  ov.style.fontSize = tab === 2 ? '5.5rem' : '4rem';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    ov.style.transition = 'opacity 0.5s ease';
+    ov.style.opacity = '0';
+  }));
+}
+
+// ─────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────
+let toastTimer = null;
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+// ─────────────────────────────────────────────
+//  ANIMATION
+// ─────────────────────────────────────────────
+document.querySelectorAll('.anim-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    st.animType = btn.dataset.anim;
+    zzzParticles = [];
+    document.querySelectorAll('.anim-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.anim === st.animType));
+  });
+});
+
+let animRAF = null;
+let animT   = 0;
+let sparkles = [];
+let zzzParticles = [];
+let walkFlip = 1;
+
+// ── Sparkle ──
+function mkSparkle(w, h) {
+  return {
+    x: Math.random() * w,
+    y: Math.random() * h,
+    sz: Math.random() * 13 + 7,
+    vx: (Math.random() - 0.5) * 1.1,
+    vy: -(Math.random() * 1.0 + 0.4),
+    rot: Math.random() * Math.PI * 2,
+    rspd: (Math.random() - 0.5) * 0.09,
+    col: SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)],
+    life: 1.0,
+    decay: Math.random() * 0.008 + 0.004,
+  };
+}
+
+function tickSparkles(w, h) {
+  if (sparkles.length < 22 && Math.random() < 0.38)
+    sparkles.push(mkSparkle(w, h));
+  sparkles = sparkles.filter(s => s.life > 0.04);
+  sparkles.forEach(s => {
+    s.x += s.vx; s.y += s.vy;
+    s.rot += s.rspd; s.life -= s.decay;
+  });
+}
+
+function drawStar(ctx, x, y, r, col, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(0);
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const a  = (i / 4) * Math.PI * 2 - Math.PI / 4;
+    const a2 = a + Math.PI / 4;
+    const ox = Math.cos(a) * r;
+    const oy = Math.sin(a) * r;
+    const ix = Math.cos(a2) * r * 0.25;
+    const iy = Math.sin(a2) * r * 0.25;
+    i === 0 ? ctx.moveTo(ox, oy) : ctx.lineTo(ox, oy);
+    ctx.lineTo(ix, iy);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSparkles(ctx) {
+  sparkles.forEach(s => drawStar(ctx, s.x, s.y, s.sz / 2, s.col, s.life));
+}
+
+// ── ZZZ ──
+function mkZzz(cx, cy) {
+  return {
+    x: cx + (Math.random() - 0.5) * 50,
+    y: cy,
+    vy: -(Math.random() * 0.5 + 0.3),
+    dx: (Math.random() - 0.5) * 0.4,
+    sz: Math.random() * 10 + 12,
+    life: 1.0,
+    decay: 0.006,
+  };
+}
+
+// ── Main loop ──
+function startAnim() {
+  stopAnim();
+  sparkles = []; zzzParticles = []; animT = 0; walkFlip = 1;
+
+  const w = animCanvas.width;
+  const h = animCanvas.height;
+
+  function loop() {
+    animT += 0.022;
+    const t = animT;
+
+    animCtx.clearRect(0, 0, w, h);
+
+    // Background
+    animCtx.fillStyle = '#ffffff';
+    animCtx.fillRect(0, 0, w, h);
+    resetComposite(bgCtx);
+    animCtx.drawImage(bgCanvas, 0, 0);
+
+    // Character transform
+    let tx = 0, ty = 0, rot = 0, sx = 1, sy = 1;
+
+    if (st.animType === 'bounce') {
+      const b = Math.abs(Math.sin(t * 3.0));
+      ty = -b * 68;
+      sy =  0.87 + b * 0.13;
+      sx =  1 / sy;
+    }
+
+    if (st.animType === 'walk') {
+      const wave = Math.sin(t * 1.9);
+      const vel  = Math.cos(t * 1.9);
+      tx = wave * Math.min(w * 0.22, 105);
+      ty = -Math.abs(Math.sin(t * 3.8)) * 16;
+      if      (vel >  0.08) walkFlip =  1;
+      else if (vel < -0.08) walkFlip = -1;
+      sx = walkFlip;
+    }
+
+    if (st.animType === 'dance') {
+      tx  = Math.sin(t * 2.3) * 48;
+      rot = Math.sin(t * 2.3) * 0.24;
+      ty  = -Math.abs(Math.sin(t * 4.6)) * 22;
+    }
+
+    if (st.animType === 'sleep') {
+      ty  = Math.sin(t * 0.85) * 11;
+      rot = Math.sin(t * 0.85) * 0.058;
+      if (Math.random() < 0.022)
+        zzzParticles.push(mkZzz(w * 0.57, h * 0.27));
+    }
+
+    // Draw character
+    resetComposite(charCtx);
+    animCtx.save();
+    animCtx.translate(w / 2 + tx, h / 2 + ty);
+    animCtx.rotate(rot);
+    animCtx.scale(sx, sy);
+    animCtx.drawImage(charCanvas, -w / 2, -h / 2);
+    animCtx.restore();
+
+    // Sparkles
+    tickSparkles(w, h);
+    drawSparkles(animCtx);
+
+    // ZZZ
+    zzzParticles = zzzParticles.filter(z => z.life > 0.04);
+    zzzParticles.forEach(z => {
+      z.y += z.vy; z.x += z.dx; z.life -= z.decay;
+      animCtx.save();
+      animCtx.globalAlpha = z.life;
+      animCtx.fillStyle = '#8833cc';
+      animCtx.font = `bold ${z.sz}px sans-serif`;
+      animCtx.textAlign = 'center';
+      animCtx.fillText('Z', z.x, z.y);
+      animCtx.restore();
+    });
+
+    animRAF = requestAnimationFrame(loop);
+  }
+
+  animRAF = requestAnimationFrame(loop);
+}
+
+function stopAnim() {
+  if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
+}
+
+// ─────────────────────────────────────────────
+//  SEND TO FAMILY
+// ─────────────────────────────────────────────
+document.getElementById('send-btn').addEventListener('click', () => {
+  const tmp = document.createElement('canvas');
+  tmp.width  = animCanvas.width;
+  tmp.height = animCanvas.height;
+  tmp.getContext('2d').drawImage(animCanvas, 0, 0);
+  const url = tmp.toDataURL('image/png');
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    const w = window.open('');
+    if (w) {
+      w.document.write(
+        '<html><head><meta name="viewport" content="width=device-width">' +
+        '<title>じぶんのえ</title></head><body style="margin:0;background:#fff5fc;text-align:center">' +
+        '<p style="padding:12px;font-family:sans-serif;color:#888;font-size:13px">' +
+        'えをながおしして「しゃしんをほぞん」してね！🎉</p>' +
+        '<img src="' + url + '" style="max-width:100%;display:block;margin:0 auto">' +
+        '</body></html>'
+      );
+    }
+    showToast('💌 ながおしでほぞんしてね！');
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'じぶんのえ.png';
+    a.click();
+    showToast('💌 ほぞんしたよ！');
+  }
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+function init() {
+  initCanvases();
+  buildPalette();
+}
+
+init();
+</script>
+</body>
+</html>
