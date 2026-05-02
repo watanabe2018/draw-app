@@ -1486,7 +1486,22 @@ function init() {
   buildPalette();
 }
 
-init();
+// PWAスタンドアロン起動時にcanvasサイズが0になる問題の対策
+// clientWidthが確定するまでrequestAnimationFrameでリトライする
+function safeInit() {
+  const el = document.getElementById('main');
+  if (!el || el.clientWidth === 0 || el.clientHeight === 0) {
+    requestAnimationFrame(safeInit);
+    return;
+  }
+  init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', safeInit);
+} else {
+  safeInit();
+}
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oekaki-cache-v1';
+const CACHE_NAME = 'oekaki-cache-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -27,11 +27,16 @@ self.addEventListener('activate', e => {
   );
 });
 
-// キャッシュ優先で返す（オフライン対応）
+// ネットワーク優先・失敗時はキャッシュで返す
+// 常に最新ファイルを使うようにネットワーク優先に変更
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).catch(() => caches.match('./index.html'));
-    })
+    fetch(e.request)
+      .then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
