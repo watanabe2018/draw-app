@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="おえかき">
   <meta name="theme-color" content="#ff85a2">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>じぶんのえをうごかそう！</title>
   <style>
     *, *::before, *::after {
@@ -1463,6 +1466,17 @@ document.getElementById('mix-save-btn').addEventListener('click', () => {
   showToast(`📦 ${mixResult.name} をパレットにいれたよ！`);
   closeMixPopup();
 });
+
+// ─────────────────────────────────────────────
+//  SERVICE WORKER 登録
+// ─────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
 
 // ─────────────────────────────────────────────
 //  INIT
