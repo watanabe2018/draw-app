@@ -863,6 +863,42 @@
 
 </div><!-- /app -->
 
+<!-- SETTINGS POPUP -->
+<div id="settings-popup" class="popup-bg hidden">
+  <div class="settings-box">
+    <div class="settings-title">⚙️ せってい</div>
+
+    <div>
+      <div class="settings-sublabel">
+        🖼 がくぶちのはば
+        <span class="val-badge" id="frame-val-label">10px</span>
+      </div>
+
+      <div class="frame-presets">
+        <button class="preset-btn" data-val="0">なし<br><span style="font-size:0.65rem;opacity:0.7">0px</span></button>
+        <button class="preset-btn on" data-val="10">ふつう<br><span style="font-size:0.65rem;opacity:0.7">10px</span></button>
+        <button class="preset-btn" data-val="18">ひろめ<br><span style="font-size:0.65rem;opacity:0.7">18px</span></button>
+        <button class="preset-btn" data-val="28">ひろい<br><span style="font-size:0.65rem;opacity:0.7">28px</span></button>
+      </div>
+
+      <input type="range" id="frame-slider" min="0" max="40" step="1" value="10">
+
+      <div class="frame-preview-row" style="margin-top:12px;">
+        <div class="frame-preview">
+          <div class="fp-left"  id="fp-left"  style="width:10px;"></div>
+          <div class="fp-right" id="fp-right" style="width:10px;"></div>
+          <div class="fp-canvas" id="fp-canvas" style="left:10px;right:10px;">🐱</div>
+        </div>
+        <div class="frame-preview-desc">
+          がくぶちが<br>ひろいほど<br>ジェスチャーが<br>おきにくいよ
+        </div>
+      </div>
+    </div>
+
+    <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
+  </div>
+</div>
+
 <!-- COLOR MIX POPUP -->
 <div id="mix-popup" class="popup-bg hidden">
   <div class="mix-box">
