@@ -551,20 +551,21 @@
     /* マルチキャラ個別モーション */
     /* ふたりモード専用アニメ選択 */
     #futari-anim-panel {
-      position: absolute;
-      bottom: 68px;
-      left: 8px;
-      right: 8px;
-      z-index: 5;
-      display: flex;
+      flex-shrink: 0;
+      background: #fff;
+      border-top: 2px solid var(--lpink);
+      display: none;
       flex-direction: column;
-      gap: 5px;
+      gap: 0;
+      box-shadow: 0 -2px 8px rgba(200, 100, 160, 0.1);
     }
-    #futari-anim-panel.hidden { display: none; }
+    #futari-anim-panel.hidden { display: none !important; }
 
     .futari-btn-row {
       display: flex;
       gap: 5px;
+      padding: 7px 8px 5px;
+      border-bottom: 0.5px solid var(--lpurple);
     }
 
     .futari-anim-btn {
@@ -572,14 +573,12 @@
       padding: 6px 3px;
       border-radius: 10px;
       border: 1.5px solid var(--lpurple);
-      background: rgba(255,255,255,0.92);
-      font-size: clamp(0.58rem, 2.4vw, 0.68rem);
+      background: #fff;
+      font-size: clamp(0.58rem, 2.4vw, 0.72rem);
       font-weight: bold;
       color: var(--dpurple);
       cursor: pointer;
       text-align: center;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       transition: all 0.15s;
       white-space: nowrap;
     }
@@ -593,20 +592,18 @@
 
     .futari-exit-btn {
       width: 100%;
-      padding: 7px;
-      border-radius: 10px;
-      border: 1.5px solid var(--lpurple);
-      background: rgba(255,255,255,0.92);
-      font-size: 0.75rem;
+      padding: 7px 8px;
+      border: none;
+      background: #fff;
+      font-size: 0.78rem;
       font-weight: bold;
       color: var(--dpurple);
       cursor: pointer;
       text-align: center;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       transition: all 0.15s;
+      box-sizing: border-box;
     }
-    .futari-exit-btn:active { transform: scale(0.96); }
+    .futari-exit-btn:active { opacity: 0.7; }
 
     /* ======== TOOLBAR ======== */
     #toolbar {
@@ -1068,8 +1065,6 @@
     <!-- Tab 2: うごかす -->
     <div class="screen" id="screen-anim">
       <canvas id="animCanvas"></canvas>
-      <!-- マルチキャラ個別モーションパネル -->
-      <div id="futari-anim-panel" class="hidden"></div>
     </div>
   </div><!-- /main -->
 
@@ -1087,6 +1082,9 @@
       <button class="anim-action-btn" id="action-futari">👥 ふたり</button>
     </div>
   </div>
+
+  <!-- FUTARI TOOLBAR -->
+  <div id="futari-anim-panel" class="hidden"></div>
 
   <!-- TOOLBAR (hidden on anim tab) -->
   <div id="toolbar">
@@ -1925,14 +1923,20 @@ function buildFutariPanel() {
   panel.appendChild(row1);
   panel.appendChild(row2);
   panel.appendChild(exitBtn);
+  // ツールバー位置に表示: anim-toolbarを隠してfutari-panelを表示
+  document.getElementById('anim-toolbar').style.display = 'none';
   panel.classList.remove('hidden');
+  panel.style.display = 'flex';
 }
 
 function exitFutariMode() {
   futariChars = [];
   const panel = document.getElementById('futari-anim-panel');
   panel.classList.add('hidden');
+  panel.style.display = 'none';
   panel.innerHTML = '';
+  // anim-toolbarを戻す
+  document.getElementById('anim-toolbar').style.display = 'flex';
   startAnim();
 }
 
