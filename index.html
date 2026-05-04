@@ -1155,7 +1155,7 @@
       <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">📤 ともだちとシェア</div>
       <button id="menu-send-char" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#1D9E75,#5DCAA5);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(30,160,120,0.35);">📤 キャラをともだちにおくる</button>
       <button id="menu-receive-char" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #9FE1CB;background:#E1F5EE;color:#085041;font-size:0.88rem;font-weight:bold;cursor:pointer;">📥 ともだちからうけとる</button>
-    <input type="file" id="receive-file-input" accept=".json" style="display:none;"></div>
+    <input type="file" id="receive-file-input" accept=".txt,.json" style="display:none;"></div>
     </div>
     <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
   </div>
@@ -2295,33 +2295,42 @@ function openCharListForSend() {
     popup.classList.add('hidden');
 
     const payload = JSON.stringify({ oekaki_chars: selected }, null, 2);
-    const blob = new Blob([payload], { type: 'application/json' });
-    const fileName = (selected[0].name || 'キャラ') + '_oekaki.json';
-    const file = new File([blob], fileName, { type: 'application/json' });
+    const charName = selected[0].name || 'キャラ';
 
-    // Web Share API（ファイル共有対応）
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: 'おえかきキャラをおくるよ！',
-          text: '「' + selected[0].name + '」をおくるよ！おえかきアプリでひらいてね✨',
-          files: [file]
-        });
-        showToast('📤 おくったよ！');
-      } catch(e) {
-        if (e.name !== 'AbortError') fallbackDownload(blob, fileName);
+    // .txtとして共有（AndroidもiOSも対応）
+    const txtBlob = new Blob([payload], { type: 'text/plain' });
+    const fileName = charName + '_oekaki.txt';
+    const file = new File([txtBlob], fileName, { type: 'text/plain' });
+
+    // Web Share API
+    if (navigator.share) {
+      let shared = false;
+      // ファイル共有を試みる
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'おえかきキャラをおくるよ！',
+            text: '「' + charName + '」をおくるよ！おえかきアプリでひらいてね✨',
+            files: [file]
+          });
+          showToast('📤 おくったよ！');
+          shared = true;
+        } catch(e) {
+          if (e.name === 'AbortError') { shared = true; } // キャンセルは正常
+        }
       }
-    } else if (navigator.share) {
-      // ファイル非対応の場合はURLなしでテキストのみ共有 + ダウンロード
-      fallbackDownload(blob, fileName);
-      try {
-        await navigator.share({
-          title: 'おえかきキャラをおくるよ！',
-          text: '「' + selected[0].name + '」のキャラデータをおくるよ✨'
-        });
-      } catch(e) {}
+      // ファイル共有できなかった場合はダウンロード＋テキスト共有
+      if (!shared) {
+        fallbackDownload(txtBlob, fileName);
+        try {
+          await navigator.share({
+            title: 'おえかきキャラをおくるよ！',
+            text: '「' + charName + '」のキャラデータをおくるよ✨ ファイルをいっしょにおくるね！'
+          });
+        } catch(e) {}
+      }
     } else {
-      fallbackDownload(blob, fileName);
+      fallbackDownload(txtBlob, fileName);
     }
   });
 
