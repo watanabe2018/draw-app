@@ -292,17 +292,23 @@
     }
 
     /* ======== ANIMATION SCREEN ======== */
+    #anim-toolbar {
+      flex-shrink: 0;
+      background: #fff;
+      border-top: 2px solid var(--lpink);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 -2px 8px rgba(200, 100, 160, 0.1);
+    }
+
     #anim-buttons {
-      position: absolute;
-      top: 10px;
-      left: 0;
-      right: 0;
       display: flex;
       justify-content: center;
       gap: 5px;
-      padding: 0 6px;
-      z-index: 5;
-      flex-wrap: wrap;
+      padding: 7px 8px 5px;
+      flex-wrap: nowrap;
+      border-bottom: 0.5px solid var(--lpurple);
     }
 
     .anim-btn {
@@ -333,6 +339,30 @@
     }
 
 
+
+
+    /* ======== ANIM BOTTOM ROWS ======== */
+    #anim-action-row {
+      display: flex;
+      gap: 5px;
+      padding: 5px 8px 7px;
+    }
+
+    .anim-action-btn {
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 20px;
+      border: 1.5px solid var(--lpurple);
+      background: #fff;
+      font-size: clamp(0.62rem, 2.6vw, 0.72rem);
+      font-weight: bold;
+      color: var(--dpurple);
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .anim-action-btn:active { transform: scale(0.95); }
 
     /* ======== SAVE / LOAD / MULTI CHAR ======== */
 
@@ -1038,18 +1068,25 @@
     <!-- Tab 2: うごかす -->
     <div class="screen" id="screen-anim">
       <canvas id="animCanvas"></canvas>
-      <div id="anim-buttons">
-        <button class="anim-btn active" data-anim="bounce">🐰 ぴょんぴょん</button>
-        <button class="anim-btn" data-anim="walk">🐾 あるく</button>
-        <button class="anim-btn" data-anim="dance">💃 おどる</button>
-        <button class="anim-btn" data-anim="sleep">😴 ねむる</button>
-      </div>
       <!-- マルチキャラ個別モーションパネル -->
       <div id="futari-anim-panel" class="hidden"></div>
-
     </div>
-
   </div><!-- /main -->
+
+  <!-- ANIM TOOLBAR (うごかすタブのみ表示、toolbarと同じ位置) -->
+  <div id="anim-toolbar" style="display:none;">
+    <div id="anim-buttons">
+      <button class="anim-btn active" data-anim="bounce">🐰 ぴょんぴょん</button>
+      <button class="anim-btn" data-anim="walk">🐾 あるく</button>
+      <button class="anim-btn" data-anim="dance">💃 おどる</button>
+      <button class="anim-btn" data-anim="sleep">😴 ねむる</button>
+    </div>
+    <div id="anim-action-row">
+      <button class="anim-action-btn" id="action-save">💾 ほぞん</button>
+      <button class="anim-action-btn" id="action-load">📂 よみだす</button>
+      <button class="anim-action-btn" id="action-futari">👥 ふたり</button>
+    </div>
+  </div>
 
   <!-- TOOLBAR (hidden on anim tab) -->
   <div id="toolbar">
@@ -1145,18 +1182,6 @@
       </div>
     </div>
 
-    <div style="border-top:1px solid #F4C0D1;padding-top:14px;display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">🎨 キャラであそぶ</div>
-      <button id="menu-save-char" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #CECBF6;background:#F5F4FF;color:#3C3489;font-size:0.88rem;font-weight:bold;cursor:pointer;">💾 キャラをほぞんする</button>
-      <button id="menu-load-chars" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #CECBF6;background:#F5F4FF;color:#3C3489;font-size:0.88rem;font-weight:bold;cursor:pointer;">📂 キャラをよみだす</button>
-      <button id="menu-multi-mode" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(200,80,200,0.35);">👥 ふたりであそぶ！</button>
-    </div>
-    <div style="border-top:1px solid #F4C0D1;padding-top:14px;display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">📤 ともだちとシェア</div>
-      <button id="menu-send-char" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#1D9E75,#5DCAA5);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(30,160,120,0.35);">📤 キャラをともだちにおくる</button>
-      <button id="menu-receive-char" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #9FE1CB;background:#E1F5EE;color:#085041;font-size:0.88rem;font-weight:bold;cursor:pointer;">📥 ともだちからうけとる</button>
-    <input type="file" id="receive-file-input" accept=".txt,.json" style="display:none;"></div>
-    </div>
     <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
   </div>
 </div>
@@ -1473,6 +1498,7 @@ function switchTab(tab) {
 
   // Toolbar
   document.getElementById('toolbar').style.display = tab === 2 ? 'none' : 'flex';
+  document.getElementById('anim-toolbar').style.display = tab === 2 ? 'flex' : 'none';
 
   // Tab-specific
   if (tab === 1) syncCharOverlay();
@@ -1723,7 +1749,7 @@ function saveCharacter(name) {
 }
 
 // ── 保存ボタン ──
-document.getElementById('menu-save-char').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden');
+document.getElementById('action-save').addEventListener('click', () => {
   document.getElementById('savename-input').value = '';
   document.getElementById('savename-popup').classList.remove('hidden');
   setTimeout(() => document.getElementById('savename-input').focus(), 100);
@@ -1811,8 +1837,8 @@ function deleteChar(id) {
   try { localStorage.setItem(CHAR_SAVE_KEY, JSON.stringify(chars)); } catch(e) {}
 }
 
-document.getElementById('menu-load-chars').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden'); openCharList(false); });
-document.getElementById('menu-multi-mode').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden'); openCharList(true); });
+document.getElementById('action-load').addEventListener('click', () => { openCharList(false); });
+document.getElementById('action-futari').addEventListener('click', () => { openCharList(true); });
 document.getElementById('charlist-cancel').addEventListener('click', () => {
   document.getElementById('charlist-popup').classList.add('hidden');
 });
@@ -2229,161 +2255,6 @@ document.getElementById('mix-save-btn').addEventListener('click', () => {
   closeMixPopup();
 });
 
-
-// ─────────────────────────────────────────────
-//  SHARE CHARS (おくる・うけとる)
-// ─────────────────────────────────────────────
-
-// 📤 おくる: 保存済みキャラを選んでWeb Share APIで共有
-document.getElementById('menu-send-char').addEventListener('click', () => {
-  document.getElementById('settings-popup').classList.add('hidden');
-  const chars = getSavedChars();
-  if (chars.length === 0) {
-    showToast('まずキャラをほぞんしてね！💾');
-    return;
-  }
-  // 選択ポップアップを開く（送る用）
-  openCharListForSend();
-});
-
-function openCharListForSend() {
-  const chars = getSavedChars();
-  const popup = document.getElementById('charlist-popup');
-  const subtitle = document.getElementById('charlist-subtitle');
-  const items = document.getElementById('charlist-items');
-  const okBtn = document.getElementById('charlist-ok');
-
-  subtitle.textContent = 'おくりたいキャラをえらんでね';
-  okBtn.textContent = '📤 このキャラをおくる！';
-  charlistSelectedIds = [];
-
-  items.innerHTML = '';
-  chars.forEach(c => {
-    const el = document.createElement('div');
-    el.className = 'char-save-item';
-    el.dataset.id = c.id;
-    el.innerHTML = `
-      <img class="char-item-thumb" src="${c.thumb}" alt="${c.name}">
-      <div class="char-item-info">
-        <div class="char-item-name">${c.name}</div>
-        <div class="char-item-date">${c.date}</div>
-      </div>
-      <div class="char-item-check">○</div>
-    `;
-    el.addEventListener('click', () => {
-      items.querySelectorAll('.char-save-item').forEach(e2 => {
-        e2.classList.remove('sel');
-        e2.querySelector('.char-item-check').textContent = '○';
-      });
-      charlistSelectedIds = [c.id];
-      el.classList.add('sel');
-      el.querySelector('.char-item-check').textContent = '✓';
-    });
-    items.appendChild(el);
-  });
-
-  // OKボタンを送る処理に一時差し替え
-  const newOkBtn = okBtn.cloneNode(true);
-  okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-  newOkBtn.id = 'charlist-ok';
-  newOkBtn.addEventListener('click', async () => {
-    if (charlistSelectedIds.length === 0) { showToast('キャラをえらんでね！'); return; }
-    const chars = getSavedChars();
-    const selected = chars.filter(c => charlistSelectedIds.includes(c.id));
-    if (selected.length === 0) return;
-
-    popup.classList.add('hidden');
-
-    const payload = JSON.stringify({ oekaki_chars: selected }, null, 2);
-    const charName = selected[0].name || 'キャラ';
-
-    // .txtとして共有（AndroidもiOSも対応）
-    const txtBlob = new Blob([payload], { type: 'text/plain' });
-    const fileName = charName + '_oekaki.txt';
-    const file = new File([txtBlob], fileName, { type: 'text/plain' });
-
-    // Web Share API
-    if (navigator.share) {
-      let shared = false;
-      // ファイル共有を試みる
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: 'おえかきキャラをおくるよ！',
-            text: '「' + charName + '」をおくるよ！おえかきアプリでひらいてね✨',
-            files: [file]
-          });
-          showToast('📤 おくったよ！');
-          shared = true;
-        } catch(e) {
-          if (e.name === 'AbortError') { shared = true; } // キャンセルは正常
-        }
-      }
-      // ファイル共有できなかった場合はダウンロード＋テキスト共有
-      if (!shared) {
-        fallbackDownload(txtBlob, fileName);
-        try {
-          await navigator.share({
-            title: 'おえかきキャラをおくるよ！',
-            text: '「' + charName + '」のキャラデータをおくるよ✨ ファイルをいっしょにおくるね！'
-          });
-        } catch(e) {}
-      }
-    } else {
-      fallbackDownload(txtBlob, fileName);
-    }
-  });
-
-  popup.classList.remove('hidden');
-}
-
-function fallbackDownload(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('💾 ダウンロードしたよ！LINEでおくってね');
-}
-
-// 📥 うけとる: JSONファイルを読み込んでlocalStorageに追加
-document.getElementById('menu-receive-char').addEventListener('click', () => {
-  document.getElementById('settings-popup').classList.add('hidden');
-  document.getElementById('receive-file-input').click();
-});
-
-document.getElementById('receive-file-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      const incoming = data.oekaki_chars;
-      if (!Array.isArray(incoming) || incoming.length === 0) {
-        showToast('よみこめなかったよ😢 ファイルをかくにんしてね');
-        return;
-      }
-      const existing = getSavedChars();
-      // 重複チェック（同じIDは上書きしない）
-      const existingIds = new Set(existing.map(c => c.id));
-      const newChars = incoming.filter(c => !existingIds.has(c.id));
-      if (newChars.length === 0) {
-        showToast('このキャラはもうもってるよ！');
-        return;
-      }
-      const merged = [...newChars, ...existing].slice(0, 10);
-      localStorage.setItem(CHAR_SAVE_KEY, JSON.stringify(merged));
-      showToast('✨ ' + newChars.length + 'キャラをうけとったよ！');
-    } catch(err) {
-      showToast('よみこみエラー😢');
-    }
-    // inputをリセット（同じファイルを再度選べるように）
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-});
 
 // ─────────────────────────────────────────────
 //  SETTINGS (FRAME WIDTH)
