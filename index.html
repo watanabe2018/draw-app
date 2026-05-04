@@ -547,7 +547,8 @@
     }
 
     /* マルチキャラ個別モーション */
-    #multi-motion-panel {
+    /* ふたりモード専用アニメ選択 */
+    #futari-anim-panel {
       position: absolute;
       bottom: 68px;
       left: 8px;
@@ -557,54 +558,53 @@
       flex-direction: column;
       gap: 5px;
     }
-    #multi-motion-panel.hidden { display: none; }
+    #futari-anim-panel.hidden { display: none; }
 
-    .multi-char-row {
+    .futari-btn-row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .futari-anim-btn {
+      flex: 1;
+      padding: 6px 3px;
+      border-radius: 10px;
+      border: 1.5px solid var(--lpurple);
       background: rgba(255,255,255,0.92);
-      border-radius: 12px;
-      padding: 6px 10px;
-      backdrop-filter: blur(6px);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border: 1.5px solid var(--lpurple);
-    }
-
-    .multi-char-name {
-      font-size: 0.72rem;
-      font-weight: bold;
-      color: var(--dpurple);
-      min-width: 48px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .multi-motion-btns {
-      display: flex;
-      gap: 4px;
-      flex: 1;
-    }
-
-    .mm-btn {
-      flex: 1;
-      padding: 4px 2px;
-      border-radius: 8px;
-      border: 1.5px solid var(--lpurple);
-      background: #fff;
-      font-size: 0.62rem;
+      font-size: clamp(0.58rem, 2.4vw, 0.68rem);
       font-weight: bold;
       color: var(--dpurple);
       cursor: pointer;
       text-align: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: all 0.15s;
       white-space: nowrap;
-      transition: all 0.12s;
     }
-    .mm-btn.on {
+    .futari-anim-btn.on {
       background: linear-gradient(135deg, var(--pink), var(--purple));
       color: #fff;
       border-color: transparent;
+      box-shadow: 0 3px 10px rgba(200,80,200,0.4);
     }
+    .futari-anim-btn:active { transform: scale(0.95); }
+
+    .futari-exit-btn {
+      width: 100%;
+      padding: 7px;
+      border-radius: 10px;
+      border: 1.5px solid var(--lpurple);
+      background: rgba(255,255,255,0.92);
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--dpurple);
+      cursor: pointer;
+      text-align: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: all 0.15s;
+    }
+    .futari-exit-btn:active { transform: scale(0.96); }
 
     /* ======== TOOLBAR ======== */
     #toolbar {
@@ -1080,7 +1080,7 @@
       </div>
 
       <!-- マルチキャラ個別モーションパネル -->
-      <div id="multi-motion-panel" class="hidden"></div>
+      <div id="futari-anim-panel" class="hidden"></div>
 
     </div>
 
@@ -1139,7 +1139,7 @@
 <div id="charlist-popup" class="hidden">
   <div class="charlist-box">
     <div class="charlist-title">📂 ほぞんしたキャラ</div>
-    <div class="charlist-subtitle" id="charlist-subtitle">ついかしたいキャラをえらんでね</div>
+    <div class="charlist-subtitle" id="charlist-subtitle">2キャラをえらんでね（ちょうど2こ）</div>
     <div id="charlist-items"></div>
     <div class="charlist-actions">
       <button class="charlist-cancel-btn" id="charlist-cancel">もどる</button>
@@ -1763,8 +1763,7 @@ document.getElementById('savename-ok').addEventListener('click', () => {
 });
 
 // ── 読み出し / マルチモード ──
-let multiMode = false;          // ふたりモード中か
-let extraChars = [];            // 追加キャラ [{img, bg, name, animType, animT, walkFlip}]
+let multiMode = false;          // ふたりモード選択中か（charlist用）
 let charlistSelectedIds = [];   // ポップアップで選んだID
 
 function openCharList(isMulti) {
@@ -1774,9 +1773,9 @@ function openCharList(isMulti) {
   const subtitle = document.getElementById('charlist-subtitle');
   const items    = document.getElementById('charlist-items');
   subtitle.textContent = isMulti
-    ? 'ついかしたいキャラをえらんでね（なんこでもOK）'
+    ? 'ちょうど2キャラをえらんでね'
     : 'よみこみたいキャラをえらんでね';
-  document.getElementById('charlist-ok').textContent = isMulti ? 'ステージにおく！' : 'よみこむ！';
+  document.getElementById('charlist-ok').textContent = isMulti ? 'あそばせる！' : 'よみこむ！';
 
   if (chars.length === 0) {
     items.innerHTML = '<div class="charlist-empty">まだほぞんしたキャラがないよ！<br>まずキャラをかいて「ほぞん」しよう🎨</div>';
@@ -1864,142 +1863,182 @@ document.getElementById('charlist-ok').addEventListener('click', () => {
     };
     showToast('📂 「' + c.name + '」をよみこんだよ！');
   } else {
-    // マルチモード: 追加キャラを登録
-    extraChars = selected.map((c, i) => {
-      const img  = new Image(); img.src  = c.thumb;
+    // ふたりモード: ちょうど2キャラ必須
+    if (selected.length !== 2) {
+      showToast('ちょうど2キャラをえらんでね！');
+      return;
+    }
+    futariChars = selected.map(c => {
+      const img = new Image(); img.src = c.thumb;
       const bgIm = new Image(); bgIm.src = c.bg;
-      return { img, bgIm, name: c.name, animType: 'bounce', animT: i * 1.2, walkFlip: 1 };
+      return { img, bgIm, name: c.name };
     });
-    buildMultiPanel();
-    startAnimMulti();
-    showToast('👥 ' + selected.length + 'キャラをついかしたよ！');
+    futariAnimType = 'chase';
+    buildFutariPanel();
+    startAnimFutari();
+    showToast('👥 ふたりであそびはじめたよ！');
   }
 });
 
-// ── マルチキャラ個別モーションパネル ──
-function buildMultiPanel() {
-  const panel = document.getElementById('multi-motion-panel');
+// ── ふたりモード ──
+let futariChars = [];       // [{img, bgIm, name}] ちょうど2つ
+let futariAnimType = 'chase'; // 現在のふたりアニメ種類
+
+const FUTARI_ANIMS = [
+  { key: 'chase',  label: '🏃 おいかけっこ' },
+  { key: 'jump',   label: '🤸 むかいあいジャンプ' },
+  { key: 'dance',  label: '💃 いっしょにダンス' },
+  { key: 'spin',   label: '🎵 なかよしぐるぐる' },
+];
+
+function buildFutariPanel() {
+  const panel = document.getElementById('futari-anim-panel');
   panel.innerHTML = '';
-  const all = [{ name: 'メインキャラ', animType: st.animType, isMain: true }, ...extraChars];
 
-  all.forEach((c, i) => {
-    const row = document.createElement('div');
-    row.className = 'multi-char-row';
-    const motions = [
-      { key: 'bounce', label: '🐰ぴょん' },
-      { key: 'walk',   label: '🐾あるく' },
-      { key: 'dance',  label: '💃おどる' },
-      { key: 'sleep',  label: '😴ねむる' },
-    ];
-    const btnsHTML = motions.map(m =>
-      `<button class="mm-btn${c.animType === m.key ? ' on' : ''}" data-idx="${i}" data-key="${m.key}">${m.label}</button>`
-    ).join('');
-    row.innerHTML = `<div class="multi-char-name">${c.name}</div><div class="multi-motion-btns">${btnsHTML}</div>`;
-    panel.appendChild(row);
-  });
+  // アニメ選択ボタン（2行2列）
+  const row1 = document.createElement('div');
+  row1.className = 'futari-btn-row';
+  const row2 = document.createElement('div');
+  row2.className = 'futari-btn-row';
 
-  panel.classList.remove('hidden');
-
-  // ボタンイベント
-  panel.querySelectorAll('.mm-btn').forEach(btn => {
+  FUTARI_ANIMS.forEach((a, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'futari-anim-btn' + (a.key === futariAnimType ? ' on' : '');
+    btn.textContent = a.label;
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      const key = btn.dataset.key;
-      if (idx === 0) { st.animType = key; }
-      else { extraChars[idx - 1].animType = key; }
-      panel.querySelectorAll(`.mm-btn[data-idx="${idx}"]`).forEach(b => b.classList.toggle('on', b.dataset.key === key));
+      futariAnimType = a.key;
+      panel.querySelectorAll('.futari-anim-btn').forEach(b =>
+        b.classList.toggle('on', b.textContent === a.label));
     });
+    (i < 2 ? row1 : row2).appendChild(btn);
   });
+
+  // 抜けるボタン
+  const exitBtn = document.createElement('button');
+  exitBtn.className = 'futari-exit-btn';
+  exitBtn.textContent = '← ひとりにもどる';
+  exitBtn.addEventListener('click', exitFutariMode);
+
+  panel.appendChild(row1);
+  panel.appendChild(row2);
+  panel.appendChild(exitBtn);
+  panel.classList.remove('hidden');
 }
 
-// ── マルチアニメーション ──
-function startAnimMulti() {
+function exitFutariMode() {
+  futariChars = [];
+  const panel = document.getElementById('futari-anim-panel');
+  panel.classList.add('hidden');
+  panel.innerHTML = '';
+  startAnim();
+}
+
+function startAnimFutari() {
   stopAnim();
   const w = animCanvas.width;
   const h = animCanvas.height;
   let t = 0;
 
-  function calcTransform(animType, animT, walkFlip) {
-    let tx = 0, ty = 0, rot = 0, sx = 1, sy = 1;
-    if (animType === 'bounce') {
-      const b = Math.abs(Math.sin(animT * 3.0));
-      ty = -b * 68; sy = 0.87 + b * 0.13; sx = 1 / sy;
-    } else if (animType === 'walk') {
-      const wave = Math.sin(animT * 1.9);
-      const vel  = Math.cos(animT * 1.9);
-      tx = wave * Math.min(w * 0.22, 105);
-      ty = -Math.abs(Math.sin(animT * 3.8)) * 16;
-      sx = vel > 0.08 ? 1 : vel < -0.08 ? -1 : walkFlip;
-    } else if (animType === 'dance') {
-      tx = Math.sin(animT * 2.3) * 48;
-      rot = Math.sin(animT * 2.3) * 0.24;
-      ty = -Math.abs(Math.sin(animT * 4.6)) * 22;
-    } else if (animType === 'sleep') {
-      ty  = Math.sin(animT * 0.85) * 11;
-      rot = Math.sin(animT * 0.85) * 0.058;
-    }
-    return { tx, ty, rot, sx, sy };
+  // 2キャラの画像が両方ロード済みになってから開始
+  let loaded = 0;
+  futariChars.forEach(fc => {
+    if (fc.img.complete) { loaded++; }
+    else { fc.img.onload = () => { loaded++; if (loaded === 2) kick(); }; }
+  });
+  if (loaded === 2) kick();
+
+  function kick() {
+    if (animRAF) return; // 二重起動防止
+    animRAF = requestAnimationFrame(loop);
   }
 
-  function drawCharOnCanvas(ctx, canvas, tx, ty, rot, sx, sy, offsetX) {
-    const cw = canvas.width, ch = canvas.height;
-    ctx.save();
-    ctx.translate(w / 2 + tx + offsetX, h / 2 + ty);
-    ctx.rotate(rot);
-    ctx.scale(sx, sy);
-    ctx.drawImage(canvas, -cw / 2, -ch / 2);
-    ctx.restore();
+  function drawFC(fc, x, y, rot, sx, sy) {
+    const iw = fc.img.naturalWidth  || w;
+    const ih = fc.img.naturalHeight || h;
+    animCtx.save();
+    animCtx.translate(x, y);
+    animCtx.rotate(rot);
+    animCtx.scale(sx * (w / iw), sy * (h / ih));
+    animCtx.drawImage(fc.img, -iw / 2, -ih / 2);
+    animCtx.restore();
   }
 
   function loop() {
     t += 0.022;
-
     animCtx.clearRect(0, 0, w, h);
     animCtx.fillStyle = '#ffffff';
     animCtx.fillRect(0, 0, w, h);
 
-    // 背景（メインの背景）
-    resetComposite(bgCtx);
-    animCtx.drawImage(bgCanvas, 0, 0);
+    // 背景はキャラAの背景を使用
+    if (futariChars[0] && futariChars[0].bgIm.complete && futariChars[0].bgIm.naturalWidth) {
+      animCtx.drawImage(futariChars[0].bgIm, 0, 0, w, h);
+    }
 
-    // メインキャラ
-    const spread = extraChars.length > 0 ? Math.min(w * 0.2, 80) : 0;
-    const mainTf = calcTransform(st.animType, t, walkFlip);
-    resetComposite(charCtx);
-    drawCharOnCanvas(animCtx, charCanvas, mainTf.tx, mainTf.ty, mainTf.rot, mainTf.sx, mainTf.sy, -spread);
+    const [fc0, fc1] = futariChars;
+    const cx = w / 2, cy = h / 2;
+    const gap = w * 0.26;
 
-    // 追加キャラ
-    extraChars.forEach((ec, i) => {
-      ec.animT += 0.022;
-      if (ec.animType === 'walk') {
-        const vel = Math.cos(ec.animT * 1.9);
-        if (vel > 0.08) ec.walkFlip = 1;
-        else if (vel < -0.08) ec.walkFlip = -1;
+    const at = futariAnimType;
+
+    if (at === 'chase') {
+      // おいかけっこ: 左右を交互に行き来、追いかける
+      const wave = Math.sin(t * 1.4);
+      const vel  = Math.cos(t * 1.4);
+      const move = wave * w * 0.28;
+      const bobA = -Math.abs(Math.sin(t * 2.8)) * 18;
+      const bobB = -Math.abs(Math.sin(t * 2.8 + 0.3)) * 18;
+      const faceA = vel > 0 ? 1 : -1;
+      const faceB = vel > 0 ? 1 : -1;
+      drawFC(fc0, cx - gap + move, cy + bobA, 0, faceA, 1);
+      drawFC(fc1, cx + gap + move, cy + bobB, 0, faceB, 1);
+
+    } else if (at === 'jump') {
+      // むかいあいジャンプ: 向かい合って交互にジャンプ
+      const jumpA = -Math.abs(Math.sin(t * 2.8)) * 52;
+      const jumpB = -Math.abs(Math.sin(t * 2.8 + Math.PI)) * 52;
+      const sqA = 1 - Math.abs(Math.sin(t * 2.8)) * 0.15;
+      const sqB = 1 - Math.abs(Math.sin(t * 2.8 + Math.PI)) * 0.15;
+      drawFC(fc0, cx - gap, cy + jumpA, 0,  1, sqA);
+      drawFC(fc1, cx + gap, cy + jumpB, 0, -1, sqB);
+
+    } else if (at === 'dance') {
+      // いっしょにダンス: 左右に揺れながら回転
+      const sway = Math.sin(t * 2.0) * 44;
+      const rotA =  Math.sin(t * 2.0) * 0.28;
+      const rotB = -Math.sin(t * 2.0) * 0.28;
+      const ty   = -Math.abs(Math.sin(t * 4.0)) * 20;
+      drawFC(fc0, cx - gap + sway * 0.5, cy + ty, rotA,  1, 1);
+      drawFC(fc1, cx + gap + sway * 0.5, cy + ty, rotB, -1, 1);
+
+    } else if (at === 'spin') {
+      // なかよしぐるぐる: 円を描いてまわる
+      const r = gap * 0.9;
+      const ax = cx + Math.cos(t * 1.6) * r;
+      const ay = cy + Math.sin(t * 1.6) * r * 0.35;
+      const bx = cx + Math.cos(t * 1.6 + Math.PI) * r;
+      const by = cy + Math.sin(t * 1.6 + Math.PI) * r * 0.35;
+      const fA = Math.cos(t * 1.6) > 0 ? 1 : -1;
+      const fB = Math.cos(t * 1.6 + Math.PI) > 0 ? 1 : -1;
+      // 奥のキャラを先に描く（簡易Zソート）
+      if (ay > by) {
+        drawFC(fc1, bx, by, 0, fB, 0.78);
+        drawFC(fc0, ax, ay, 0, fA, 1);
+      } else {
+        drawFC(fc0, ax, ay, 0, fA, 0.78);
+        drawFC(fc1, bx, by, 0, fB, 1);
       }
-      const tf = calcTransform(ec.animType, ec.animT, ec.walkFlip || 1);
-      const offsetX = spread * (i + 1);
-      drawCharOnCanvas(animCtx, ec.img, tf.tx, tf.ty, tf.rot, tf.sx, tf.sy, offsetX);
-    });
+    }
 
-    // スパークル
     tickSparkles(w, h);
     drawSparkles(animCtx);
-
     animRAF = requestAnimationFrame(loop);
   }
-
-  animRAF = requestAnimationFrame(loop);
 }
 
-// マルチモード解除: 通常のanim-btnを押したら
+// 通常のanim-btnを押したらふたりモード解除
 document.querySelectorAll('.anim-btn').forEach(btn => {
-  const orig = btn.onclick;
   btn.addEventListener('click', () => {
-    if (extraChars.length > 0) {
-      extraChars = [];
-      document.getElementById('multi-motion-panel').classList.add('hidden');
-      document.getElementById('multi-motion-panel').innerHTML = '';
-    }
+    if (futariChars.length > 0) exitFutariMode();
   });
 });
 
