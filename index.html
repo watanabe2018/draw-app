@@ -1151,6 +1151,12 @@
       <button id="menu-load-chars" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #CECBF6;background:#F5F4FF;color:#3C3489;font-size:0.88rem;font-weight:bold;cursor:pointer;">📂 キャラをよみだす</button>
       <button id="menu-multi-mode" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(200,80,200,0.35);">👥 ふたりであそぶ！</button>
     </div>
+    <div style="border-top:1px solid #F4C0D1;padding-top:14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">📤 ともだちとシェア</div>
+      <button id="menu-send-char" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#1D9E75,#5DCAA5);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(30,160,120,0.35);">📤 キャラをともだちにおくる</button>
+      <button id="menu-receive-char" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #9FE1CB;background:#E1F5EE;color:#085041;font-size:0.88rem;font-weight:bold;cursor:pointer;">📥 ともだちからうけとる</button>
+    <input type="file" id="receive-file-input" accept=".json" style="display:none;"></div>
+    </div>
     <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
   </div>
 </div>
@@ -2221,6 +2227,153 @@ document.getElementById('mix-save-btn').addEventListener('click', () => {
   buildPalette();
   showToast(`📦 ${mixResult.name} をパレットにいれたよ！`);
   closeMixPopup();
+});
+
+
+// ─────────────────────────────────────────────
+//  SHARE CHARS (おくる・うけとる)
+// ─────────────────────────────────────────────
+
+// 📤 おくる: 保存済みキャラを選んでWeb Share APIで共有
+document.getElementById('menu-send-char').addEventListener('click', () => {
+  document.getElementById('settings-popup').classList.add('hidden');
+  const chars = getSavedChars();
+  if (chars.length === 0) {
+    showToast('まずキャラをほぞんしてね！💾');
+    return;
+  }
+  // 選択ポップアップを開く（送る用）
+  openCharListForSend();
+});
+
+function openCharListForSend() {
+  const chars = getSavedChars();
+  const popup = document.getElementById('charlist-popup');
+  const subtitle = document.getElementById('charlist-subtitle');
+  const items = document.getElementById('charlist-items');
+  const okBtn = document.getElementById('charlist-ok');
+
+  subtitle.textContent = 'おくりたいキャラをえらんでね';
+  okBtn.textContent = '📤 このキャラをおくる！';
+  charlistSelectedIds = [];
+
+  items.innerHTML = '';
+  chars.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'char-save-item';
+    el.dataset.id = c.id;
+    el.innerHTML = `
+      <img class="char-item-thumb" src="${c.thumb}" alt="${c.name}">
+      <div class="char-item-info">
+        <div class="char-item-name">${c.name}</div>
+        <div class="char-item-date">${c.date}</div>
+      </div>
+      <div class="char-item-check">○</div>
+    `;
+    el.addEventListener('click', () => {
+      items.querySelectorAll('.char-save-item').forEach(e2 => {
+        e2.classList.remove('sel');
+        e2.querySelector('.char-item-check').textContent = '○';
+      });
+      charlistSelectedIds = [c.id];
+      el.classList.add('sel');
+      el.querySelector('.char-item-check').textContent = '✓';
+    });
+    items.appendChild(el);
+  });
+
+  // OKボタンを送る処理に一時差し替え
+  const newOkBtn = okBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+  newOkBtn.id = 'charlist-ok';
+  newOkBtn.addEventListener('click', async () => {
+    if (charlistSelectedIds.length === 0) { showToast('キャラをえらんでね！'); return; }
+    const chars = getSavedChars();
+    const selected = chars.filter(c => charlistSelectedIds.includes(c.id));
+    if (selected.length === 0) return;
+
+    popup.classList.add('hidden');
+
+    const payload = JSON.stringify({ oekaki_chars: selected }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const fileName = (selected[0].name || 'キャラ') + '_oekaki.json';
+    const file = new File([blob], fileName, { type: 'application/json' });
+
+    // Web Share API（ファイル共有対応）
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: 'おえかきキャラをおくるよ！',
+          text: '「' + selected[0].name + '」をおくるよ！おえかきアプリでひらいてね✨',
+          files: [file]
+        });
+        showToast('📤 おくったよ！');
+      } catch(e) {
+        if (e.name !== 'AbortError') fallbackDownload(blob, fileName);
+      }
+    } else if (navigator.share) {
+      // ファイル非対応の場合はURLなしでテキストのみ共有 + ダウンロード
+      fallbackDownload(blob, fileName);
+      try {
+        await navigator.share({
+          title: 'おえかきキャラをおくるよ！',
+          text: '「' + selected[0].name + '」のキャラデータをおくるよ✨'
+        });
+      } catch(e) {}
+    } else {
+      fallbackDownload(blob, fileName);
+    }
+  });
+
+  popup.classList.remove('hidden');
+}
+
+function fallbackDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('💾 ダウンロードしたよ！LINEでおくってね');
+}
+
+// 📥 うけとる: JSONファイルを読み込んでlocalStorageに追加
+document.getElementById('menu-receive-char').addEventListener('click', () => {
+  document.getElementById('settings-popup').classList.add('hidden');
+  document.getElementById('receive-file-input').click();
+});
+
+document.getElementById('receive-file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const incoming = data.oekaki_chars;
+      if (!Array.isArray(incoming) || incoming.length === 0) {
+        showToast('よみこめなかったよ😢 ファイルをかくにんしてね');
+        return;
+      }
+      const existing = getSavedChars();
+      // 重複チェック（同じIDは上書きしない）
+      const existingIds = new Set(existing.map(c => c.id));
+      const newChars = incoming.filter(c => !existingIds.has(c.id));
+      if (newChars.length === 0) {
+        showToast('このキャラはもうもってるよ！');
+        return;
+      }
+      const merged = [...newChars, ...existing].slice(0, 10);
+      localStorage.setItem(CHAR_SAVE_KEY, JSON.stringify(merged));
+      showToast('✨ ' + newChars.length + 'キャラをうけとったよ！');
+    } catch(err) {
+      showToast('よみこみエラー😢');
+    }
+    // inputをリセット（同じファイルを再度選べるように）
+    e.target.value = '';
+  };
+  reader.readAsText(file);
 });
 
 // ─────────────────────────────────────────────
