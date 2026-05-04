@@ -335,34 +335,6 @@
 
 
     /* ======== SAVE / LOAD / MULTI CHAR ======== */
-    #anim-sub-btns {
-      position: absolute;
-      bottom: 68px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      z-index: 5;
-      white-space: nowrap;
-    }
-
-    .anim-sub-btn {
-      border: none;
-      border-radius: 22px;
-      padding: 8px 14px;
-      font-size: clamp(0.7rem, 3vw, 0.8rem);
-      font-weight: bold;
-      cursor: pointer;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      transition: transform 0.15s, opacity 0.15s;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
-    }
-    .anim-sub-btn:active { transform: scale(0.94); }
-
-    .btn-save-char  { background: rgba(255,255,255,0.92); color: #3C3489; border: 2px solid #CECBF6; }
-    .btn-load-chars { background: rgba(255,255,255,0.92); color: #3C3489; border: 2px solid #CECBF6; }
-    .btn-multi-mode { background: linear-gradient(135deg,#7F77DD,#AFA9EC); color:#fff; }
 
     /* キャラ選択ポップアップ */
     #charlist-popup {
@@ -1031,7 +1003,7 @@
       <div class="dot" id="dot2"></div>
     </div>
     <div id="step-label">ゆびでじゆうにキャラをかいてね ✏️</div>
-    <button id="settings-btn" aria-label="せってい">⚙️</button>
+    <button id="settings-btn" aria-label="まほうメニュー">✨</button>
   </div>
 
   <!-- MAIN CANVAS -->
@@ -1072,13 +1044,6 @@
         <button class="anim-btn" data-anim="dance">💃 おどる</button>
         <button class="anim-btn" data-anim="sleep">😴 ねむる</button>
       </div>
-      <!-- 保存/読み出し/マルチボタン -->
-      <div id="anim-sub-btns">
-        <button class="anim-sub-btn btn-save-char"  id="btn-save-char">💾 ほぞん</button>
-        <button class="anim-sub-btn btn-load-chars" id="btn-load-chars">📂 よみだし</button>
-        <button class="anim-sub-btn btn-multi-mode" id="btn-multi-mode">👥 ふたり</button>
-      </div>
-
       <!-- マルチキャラ個別モーションパネル -->
       <div id="futari-anim-panel" class="hidden"></div>
 
@@ -1151,7 +1116,7 @@
 <!-- SETTINGS POPUP -->
 <div id="settings-popup" class="popup-bg hidden">
   <div class="settings-box">
-    <div class="settings-title">⚙️ せってい</div>
+    <div class="settings-title">✨ まほうメニュー</div>
 
     <div>
       <div class="settings-sublabel">
@@ -1180,6 +1145,12 @@
       </div>
     </div>
 
+    <div style="border-top:1px solid #F4C0D1;padding-top:14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">🎨 キャラであそぶ</div>
+      <button id="menu-save-char" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #CECBF6;background:#F5F4FF;color:#3C3489;font-size:0.88rem;font-weight:bold;cursor:pointer;">💾 キャラをほぞんする</button>
+      <button id="menu-load-chars" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #CECBF6;background:#F5F4FF;color:#3C3489;font-size:0.88rem;font-weight:bold;cursor:pointer;">📂 キャラをよみだす</button>
+      <button id="menu-multi-mode" style="width:100%;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;font-size:0.88rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 14px rgba(200,80,200,0.35);">👥 ふたりであそぶ！</button>
+    </div>
     <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
   </div>
 </div>
@@ -1746,7 +1717,7 @@ function saveCharacter(name) {
 }
 
 // ── 保存ボタン ──
-document.getElementById('btn-save-char').addEventListener('click', () => {
+document.getElementById('menu-save-char').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden');
   document.getElementById('savename-input').value = '';
   document.getElementById('savename-popup').classList.remove('hidden');
   setTimeout(() => document.getElementById('savename-input').focus(), 100);
@@ -1834,8 +1805,8 @@ function deleteChar(id) {
   try { localStorage.setItem(CHAR_SAVE_KEY, JSON.stringify(chars)); } catch(e) {}
 }
 
-document.getElementById('btn-load-chars').addEventListener('click', () => openCharList(false));
-document.getElementById('btn-multi-mode').addEventListener('click', () => openCharList(true));
+document.getElementById('menu-load-chars').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden'); openCharList(false); });
+document.getElementById('menu-multi-mode').addEventListener('click', () => { document.getElementById('settings-popup').classList.add('hidden'); openCharList(true); });
 document.getElementById('charlist-cancel').addEventListener('click', () => {
   document.getElementById('charlist-popup').classList.add('hidden');
 });
