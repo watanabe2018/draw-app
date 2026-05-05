@@ -440,17 +440,7 @@
     .char-item-date { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
     .char-item-check { font-size: 1.2rem; color: #ddd; transition: color 0.15s; }
 
-    .char-item-del {
-      background: none;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      color: #ccc;
-      padding: 4px;
-      transition: color 0.15s;
-      flex-shrink: 0;
-    }
-    .char-item-del:hover { color: #e05050; }
+
 
     .charlist-empty {
       text-align: center;
@@ -1180,6 +1170,12 @@
       </div>
     </div>
 
+    <div style="border-top:1px solid #F4C0D1;padding-top:14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:0.82rem;font-weight:bold;color:#555;margin-bottom:2px;">🗑 キャラをけす</div>
+      <div id="delete-char-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;"></div>
+      <div id="delete-char-empty" style="font-size:0.8rem;color:#bbb;text-align:center;padding:8px 0;display:none;">ほぞんしたキャラがないよ</div>
+    </div>
+
     <button class="settings-close-btn" id="settings-close-btn">✅ とじる</button>
   </div>
 </div>
@@ -1793,13 +1789,8 @@ function openCharList(isMulti) {
           <div class="char-item-date">${c.date}</div>
         </div>
         <div class="char-item-check">○</div>
-        <button class="char-item-del" data-id="${c.id}" title="けす">🗑</button>
+        
       `;
-      el.querySelector('.char-item-del').addEventListener('click', e => {
-        e.stopPropagation();
-        deleteChar(c.id);
-        openCharList(multiMode);
-      });
       el.addEventListener('click', () => {
         const id = c.id;
         if (multiMode) {
@@ -2290,7 +2281,42 @@ function applyFrameWidth(px) {
 // 設定ボタン
 document.getElementById('settings-btn').addEventListener('click', () => {
   document.getElementById('settings-popup').classList.remove('hidden');
+  buildDeleteCharList();
 });
+
+function buildDeleteCharList() {
+  const chars = getSavedChars();
+  const list  = document.getElementById('delete-char-list');
+  const empty = document.getElementById('delete-char-empty');
+  list.innerHTML = '';
+
+  if (chars.length === 0) {
+    list.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  list.style.display = 'flex';
+  empty.style.display = 'none';
+
+  chars.forEach(c => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;border:1px solid #F4C0D1;background:#fff;';
+    row.innerHTML = `
+      <img src="${c.thumb}" style="width:36px;height:36px;border-radius:6px;border:1px solid #eee;object-fit:contain;flex-shrink:0;background:#f8f4ff;">
+      <div style="flex:1;font-size:0.82rem;font-weight:bold;color:#3C3489;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
+      <button data-id="${c.id}" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px;color:#ccc;transition:color 0.15s;" 
+        onmouseover="this.style.color='#e05050'" onmouseout="this.style.color='#ccc'">🗑</button>
+    `;
+    row.querySelector('button').addEventListener('click', () => {
+      if (confirm('「' + c.name + '」をけしますか？')) {
+        deleteChar(c.id);
+        buildDeleteCharList();
+        showToast('🗑 「' + c.name + '」をけしたよ');
+      }
+    });
+    list.appendChild(row);
+  });
+}
 
 // 閉じるボタン
 document.getElementById('settings-close-btn').addEventListener('click', () => {
